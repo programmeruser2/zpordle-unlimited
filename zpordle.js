@@ -297,7 +297,7 @@ if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RE
 	target = Math.round(Math.random() * MAX_NUM);
 	localStorage.removeItem('RESTORE');
 }
-document.querySelector('button#new-game').addEventListener('onclick', e => {
+document.querySelector('button#new-game').addEventListener('click', e => {
 	restore_state += 1;
 	localStorage.setItem('RESTORE', restore_state);
 	location.reload();
