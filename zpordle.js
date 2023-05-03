@@ -260,10 +260,6 @@ document.getElementById("num-guesses").innerHTML = NUM_GUESSES;
 var PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227];
 var MY_PRIMES = PRIMES.slice(0, NUM_PRIMES);
 var DISTRIBUTION = {}
-for (var i = 0; i < MY_PRIMES.length; i++) {
-  var p = MY_PRIMES[i];
-  DISTRIBUTION[p] = 1.0 / p;
-}
 //
 var EMOJI_TABLE = {
   "-1": String.fromCodePoint(0x2611),
@@ -273,78 +269,86 @@ var EMOJI_TABLE = {
   "3": String.fromCodePoint(0x1F7E9),
 }
 var SHARE_BUTTON = "<button id=\"share\" type=\"button\" onclick=\"share()\">Share</button>";
-
+var d, pstDate, nd, today, target, todays_primes, guesses, won, share_emojis, arr, streaks, last_played, input;
 // always use pacific time
-var d = new Date();
-var pstDate = d.toLocaleString("en-us", {
-	timeZone: "America/Los_Angeles"
-});
-var nd = new Date(pstDate);
-var today = nd.getFullYear() + '/' + (nd.getMonth() + 1) + '/' + nd.getDate();
+	d = new Date();
+	pstDate = d.toLocaleString("en-us", {
+		timeZone: "America/Los_Angeles"
+	});
+	nd = new Date(pstDate);
+	today = nd.getFullYear() + '/' + (nd.getMonth() + 1) + '/' + nd.getDate();
 
-// using https://github.com/davidbau/seedrandom
-Math.seedrandom(today);
+	// using https://github.com/davidbau/seedrandom
+	Math.seedrandom(today);
 
-var target = Math.round(Math.random() * MAX_NUM);
-var todays_primes = []
-var guesses = 0;
-var won = false;
-var share_emojis = [];
+function init() {
+	for (var i = 0; i < MY_PRIMES.length; i++) {
+  		var p = MY_PRIMES[i];
+  		DISTRIBUTION[p] = 1.0 / p;
+	}
+	
+	target = Math.round(Math.random() * MAX_NUM);
+	todays_primes = []
+	guesses = 0;
+	won = false;
+	share_emojis = [];
 
-for (var i = 0; i < NUM_GUESSES; i++) {
-  todays_primes.push(sample_from_distribution(DISTRIBUTION));
-}
-todays_primes.sort(function(a, b) {
-  return a - b;
-});
+	for (var i = 0; i < NUM_GUESSES; i++) {
+	  todays_primes.push(sample_from_distribution(DISTRIBUTION));
+	}
+	todays_primes.sort(function(a, b) {
+	  return a - b;
+	});
 
-document.getElementById("info").innerHTML = "Today's Primes: " + todays_primes.join(", ");
-document.getElementById("curguess").innerHTML = "Current Prime: " + todays_primes[0];
+	document.getElementById("info").innerHTML = "Today's Primes: " + todays_primes.join(", ");
+	document.getElementById("curguess").innerHTML = "Current Prime: " + todays_primes[0];
 
-// initialize statistics/streaks if we haven't yet
-if (localStorage.getItem("statistics") === null) {
-  localStorage.setItem("statistics", JSON.stringify(new Array(11).fill(0)));
-}
-if (localStorage.getItem("streaks") === null) {
-  localStorage.setItem("streaks", JSON.stringify({
-    "current-streak": 0,
-    "max-streak": 0
-  }));
-}
-if (localStorage.getItem("dark-mode") === null) {
-	localStorage.setItem("dark-mode", "false" );
-} else {
-	document.getElementById( "darkmode-checkbox" ).checked = ( localStorage.getItem( "dark-mode" ) == "true" );
-	rerender();
-}
+	// initialize statistics/streaks if we haven't yet
+	if (localStorage.getItem("statistics") === null) {
+	  localStorage.setItem("statistics", JSON.stringify(new Array(11).fill(0)));
+	}
+	if (localStorage.getItem("streaks") === null) {
+	  localStorage.setItem("streaks", JSON.stringify({
+	    "current-streak": 0,
+	    "max-streak": 0
+	  }));
+	}
+	if (localStorage.getItem("dark-mode") === null) {
+		localStorage.setItem("dark-mode", "false" );
+	} else {
+		document.getElementById( "darkmode-checkbox" ).checked = ( localStorage.getItem( "dark-mode" ) == "true" );
+		rerender();
+	}
 
-// check local storage for todays guesses
-if (localStorage.getItem("date") != today) {
-  localStorage.date = today;
-  localStorage.todays_guesses = "[]";
-} else {
-  var arr = JSON.parse(localStorage.todays_guesses);
-  for (var i = 0; i < arr.length; i++) {
-    guess_helper(arr[i]);
-  }
+	// check local storage for todays guesses
+	if (localStorage.getItem("date") != today) {
+	  localStorage.date = today;
+	  localStorage.todays_guesses = "[]";
+	} else {
+	  arr = JSON.parse(localStorage.todays_guesses);
+	  for (var i = 0; i < arr.length; i++) {
+	    guess_helper(arr[i]);
+	  }
+	}
+	// check if we missed a day
+	streaks = JSON.parse(localStorage.getItem("streaks"));
+	try {
+	  last_played = localStorage.getItem("last-played-date");
+	  if (Date.parse(today) - Date.parse(last_played) > 86400000) {
+	    streaks["current-streak"] = 0;
+	  }
+	} catch {
+	  // if last-date-played does not exist
+	  streaks["current-streak"] = 0;
+	}
+	localStorage.setItem("streaks", JSON.stringify(streaks));
+	// Shamelessly stolen from w3schools like a proper programmer.
+	input = document.getElementById("guess-input");
+	input.addEventListener("keyup", function(event) {
+	  if (event.keyCode === 13) {
+	    event.preventDefault();
+	    document.getElementById("button").click();
+	  }
+	});
 }
-// check if we missed a day
-var streaks = JSON.parse(localStorage.getItem("streaks"));
-try {
-  var last_played = localStorage.getItem("last-played-date");
-  if (Date.parse(today) - Date.parse(last_played) > 86400000) {
-    streaks["current-streak"] = 0;
-  }
-} catch {
-  // if last-date-played does not exist
-  streaks["current-streak"] = 0;
-}
-localStorage.setItem("streaks", JSON.stringify(streaks));
-// Shamelessly stolen from w3schools like a proper programmer.
-var input = document.getElementById("guess-input");
-input.addEventListener("keyup", function(event) {
-  if (event.keyCode === 13) {
-    event.preventDefault();
-    document.getElementById("button").click();
-  }
-});
+init();
