@@ -1,3 +1,7 @@
+var saved_content;
+var restore_state = 0;
+var saving = false;
+function init() {
 function norm_power(n, p) {
   // returns power of p found in n
   if (n == 0) {
@@ -286,22 +290,8 @@ var today = nd.getFullYear() + '/' + (nd.getMonth() + 1) + '/' + nd.getDate();
 Math.seedrandom(today);
 
 var target;
-var restore_state = 0;
-if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RESTORE'), 10) == NaN) {
-	target = Math.round(Math.random() * MAX_NUM);
-} else {
-	restore_state = parseInt(localStorage.getItem('RESTORE'));
-	for (var i = 0; i < restore_state; ++i) {
-		Math.random();
-	}
-	target = Math.round(Math.random() * MAX_NUM);
-	localStorage.removeItem('RESTORE');
-}
-document.querySelector('button#new-game').addEventListener('click', e => {
-	restore_state += 1;
-	localStorage.setItem('RESTORE', restore_state);
-	location.reload();
-});
+
+
 
 var todays_primes = []
 var guesses = 0;
@@ -365,3 +355,31 @@ input.addEventListener("keyup", function(event) {
     document.getElementById("button").click();
   }
 });
+}
+async function cache() {
+	saving = true;
+	const res = await fetch('.');
+	saved_content = await res.text();
+};
+cache();
+function restart() {
+if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RESTORE'), 10) == NaN) {
+	target = Math.round(Math.random() * MAX_NUM);
+} else {
+	restore_state = parseInt(localStorage.getItem('RESTORE'));
+	alert('using stored state ' + restore_state);
+	for (var i = 0; i < restore_state; ++i) {
+		Math.random();
+	}
+	target = Math.round(Math.random() * MAX_NUM);
+	localStorage.removeItem('RESTORE');
+}
+	init();
+}
+document.querySelector('button#new-game').addEventListener('click', async e => {
+	restore_state += 1;
+	localStorage.setItem('RESTORE', restore_state);
+	if (!saved_content) await cache();
+	restart();
+});
+restart();
