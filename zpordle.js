@@ -254,6 +254,8 @@ function updateDarkMode() {
 	rerender();
 }
 
+document.querySelector('button#button').onclick = guess;
+document.querySelector('button#statsButton').onclick = stats;
 // constants
 MAX_NUM = 1000;
 var NUM_PRIMES = 10;
