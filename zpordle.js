@@ -1,6 +1,7 @@
 var saved_content;
 var restore_state = 0;
 var saving = false;
+var MAX_NUM;
 function init() {
 function norm_power(n, p) {
   // returns power of p found in n
@@ -254,7 +255,7 @@ function updateDarkMode() {
 }
 
 // constants
-var MAX_NUM = 1000;
+MAX_NUM = 1000;
 var NUM_PRIMES = 10;
 var NUM_GUESSES = 10;
 //
