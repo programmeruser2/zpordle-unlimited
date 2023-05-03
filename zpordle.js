@@ -97,7 +97,7 @@ function guess_helper(g) {
   // Game is over (either guess was correct, or we're out of guesses).
   var result_string = val == 0 ?
     "You win!" :
-    "You lose. Today's number was " + target + ".";
+    `You lose. ${restore_state == 0 ? "Today's" : "The"} number was ` + target + ".";
   document.getElementById("button").disabled = true;
   document.getElementById("curguess").innerHTML = "";
 
@@ -394,7 +394,7 @@ if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RE
 } else {
 	restore_state = parseInt(localStorage.getItem('RESTORE'));
 	document.querySelector('#note-modal').style.display = 'none';
-	document.querySelector('#note-modal').textContent = ('Loaded new game, currently at game ' + (restore_state+1).toString());
+	document.querySelector('#note-modal').textContent = 'Loaded new game, currently at game #' + (restore_state+1).toString();
 	$('#note-modal').modal();
 	for (var i = 0; i < restore_state; ++i) {
 		Math.random();
