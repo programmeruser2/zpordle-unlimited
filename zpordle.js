@@ -1,8 +1,27 @@
 var saved_content;
 var restore_state = 0;
 var saving = false;
-var MAX_NUM;
+var MAX_NUM = 1000;
+var target;
+var caching = localStorage.getItem('CACHING')=='true';
+document.querySelector('input#cache-checkbox').checked=caching;
+function newGameButton() {
+	document.querySelector('button#new-game').onclick = async e => {
+	restore_state += 1;
+	localStorage.setItem('RESTORE', restore_state);
+	if (document.querySelector('input#cache-checkbox').checked) {if (!saved_content) await cache();
+	document.documentElement.innerHTML = saved_content;
+	restart();} else {
+		location.reload();
+	} 
+};
+}
 function init() {
+	document.querySelector('input#cache-checkbox').onclick = e => {
+		localStorage.setItem('CACHING', e.target.checked);
+		caching=e.target.checked;
+	}
+	newGameButton();
 function norm_power(n, p) {
   // returns power of p found in n
   if (n == 0) {
@@ -256,6 +275,7 @@ function updateDarkMode() {
 
 document.querySelector('button#button').onclick = guess;
 document.querySelector('button#statsButton').onclick = stats;
+document.querySelector('input#darkmode-checkbox').onclick = updateDarkMode;
 // constants
 MAX_NUM = 1000;
 var NUM_PRIMES = 10;
@@ -281,18 +301,7 @@ var EMOJI_TABLE = {
 }
 var SHARE_BUTTON = "<button id=\"share\" type=\"button\" onclick=\"share()\">Share</button>";
 
-// always use pacific time
-var d = new Date();
-var pstDate = d.toLocaleString("en-us", {
-	timeZone: "America/Los_Angeles"
-});
-var nd = new Date(pstDate);
-var today = nd.getFullYear() + '/' + (nd.getMonth() + 1) + '/' + nd.getDate();
 
-// using https://github.com/davidbau/seedrandom
-Math.seedrandom(today);
-
-var target;
 
 
 
@@ -359,18 +368,34 @@ input.addEventListener("keyup", function(event) {
   }
 });
 }
+// always use pacific time
+var d = new Date();
+var pstDate = d.toLocaleString("en-us", {
+	timeZone: "America/Los_Angeles"
+});
+var nd = new Date(pstDate);
+var today = nd.getFullYear() + '/' + (nd.getMonth() + 1) + '/' + nd.getDate();
+
+// using https://github.com/davidbau/seedrandom
+Math.seedrandom(today);
 async function cache() {
+	if (!document.querySelector('input#cache-checkbox').checked) {
+		return;
+	}
 	saving = true;
 	const res = await fetch('.');
 	saved_content = await res.text();
 };
 cache();
 function restart() {
+	localStorage.setItem('todays_guesses', "[]");
 if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RESTORE'), 10) == NaN) {
 	target = Math.round(Math.random() * MAX_NUM);
 } else {
 	restore_state = parseInt(localStorage.getItem('RESTORE'));
-	alert('using stored state ' + restore_state);
+	document.querySelector('#note-modal').style.display = 'none';
+	document.querySelector('#note-modal').textContent = ('Loaded new game, currently at game ' + (restore_state+1).toString());
+	$('#note-modal').modal();
 	for (var i = 0; i < restore_state; ++i) {
 		Math.random();
 	}
@@ -379,10 +404,5 @@ if (localStorage.getItem('RESTORE') == null || parseInt(localStorage.getItem('RE
 }
 	init();
 }
-document.querySelector('button#new-game').addEventListener('click', async e => {
-	restore_state += 1;
-	localStorage.setItem('RESTORE', restore_state);
-	if (!saved_content) await cache();
-	restart();
-});
+
 restart();
